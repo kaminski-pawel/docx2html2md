@@ -1,0 +1,4 @@
+jupyter-book>=0.15.1,<0.16.0
+./mammoth-1.6.0-py2.py3-none-any.whl
+# mammoth==1.6.*
+# mammoth @ git+https://github.com/kaminski-pawel/python-mammoth@master
