@@ -157,3 +157,8 @@ data/input/*
 data/md/*
 data/ipynb/*
 data/jb/*
+mystmd/*
+jb/*
+*.html
+*.md
+
