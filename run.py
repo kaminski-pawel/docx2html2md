@@ -31,4 +31,6 @@ if __name__ == "__main__":
     shutil.copyfile(fp.with_suffix(".md"), f"jb/{fp.with_suffix('.md').name}")
     shutil.copyfile(fp.with_suffix(".md"), f"mystmd/{fp.with_suffix('.md').name}")
     subprocess.run("jupyter-book build jb/".split(" "))
-    subprocess.Popen("myst build --html".split(" "), cwd="mystmd/")
+    WORKS_GREAT_BUT_IS_SLOWER_THAN_JB = (
+        'subprocess.Popen("myst build --html".split(" "), cwd="mystmd/")'
+    )

@@ -57,6 +57,7 @@ class MystMdConverter(markdownify.MarkdownConverter):
 
     class Options(markdownify.MarkdownConverter.DefaultOptions):
         heading_style = markdownify.ATX
+        escape_underscores = False
         sub_symbol = "{sub}"
         sup_symbol = "{sup}"
 
