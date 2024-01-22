@@ -24,6 +24,31 @@ class Citation(t.TypedDict):
     schema: str
 
 
+def _find_all_citation_spans(html_soup: bs4.BeautifulSoup) -> bs4.element.ResultSet:
+    return html_soup.find_all("span", {"class": "citation"})
+
+
+def _has_inner_json_data(span: bs4.Tag) -> bool:
+    return span.attrs["data-src"].startswith("data:application/json;base64,")
+
+
+def add_citations_and_bibliography(
+    html_soup: bs4.BeautifulSoup, citation_style: str = "harvard1"
+) -> bs4.BeautifulSoup:
+    citations = extract_citations(html_soup)
+    json_data = prepare_citations_for_citeproc(citations)
+    bib_source = citeproc.source.json.CiteProcJSON(json_data)
+    bib_style = citeproc.CitationStylesStyle(citation_style, validate=False)
+    bibliography = citeproc.CitationStylesBibliography(
+        bib_style, bib_source, citeproc.formatter.html
+    )
+    citeproc_citations = create_citations_to_register(citations)
+    for citation in citeproc_citations:
+        bibliography.register(citation)
+    html_soup = add_citations(html_soup, citeproc_citations, citations, bibliography)
+    return html_soup
+
+
 def extract_citations(html_soup: bs4.BeautifulSoup) -> list[Citation]:
     citations = []
     spans = html_soup.find_all("span", {"class": "citation"})
@@ -36,45 +61,6 @@ def extract_citations(html_soup: bs4.BeautifulSoup) -> list[Citation]:
                     strict=False,
                 )
             )
-            # we append data that has this shape:
-            # {
-            #     'citationID': 'a22p6p0ob48',
-            #     'properties': {'formattedCitation': '\\uldash{see Abe Ce, \\uc0\\u8222{}I disagree\\uc0\\u8220{}, in {\\i{}We all agree} (Like Minded Publ, 2010), 12; Abe Ce, {\\i{}Za\\uc0\\u380{}\\uc0\\u243{}\\uc0\\u322{}\\uc0\\u263{} g\\uc0\\u281{}\\uc0\\u347{}l\\uc0\\u261{} ja\\uc0\\u378{}\\uc0\\u324{}}, UTF-16 Enjoyers (\\uc0\\u50504{}\\uc0\\u46028{}\\uc0\\u51060{}\\uc0\\u51648{}\\uc0\\u46028{}\\uc0\\u51060{}\\uc0\\u45796{}\\uc0\\u47000{}\\uc0\\u48120{}\\uc0\\u54620{}\\uc0\\u49704{}\\uc0\\u48148{}\\uc0\\u50864{}, 2023).}', 'plainCitation': 'see Abe Ce, „I disagree“, in We all agree (Like Minded Publ, 2010), 12; Abe Ce, Zażółć gęślą jaźń, UTF-16 Enjoyers (안돌이지돌이다래미한숨바우, 2023).',
-            #                    'noteIndex': 2},
-            #     'citationItems': [
-            #         {
-            #             'id': 43,
-            #             'uris': ['http://zotero.org/users/local/bv74ArEQ/items/8ANM4ZRU'],
-            #             'itemData': {
-            #                 'id': 43,
-            #                 'type': 'chapter',
-            #                 'container-title': 'We all agree',
-            #                 'publisher': 'Like Minded Publ',
-            #                 'title': 'I disagree',
-            #                 'author': [{'family': 'Ce', 'given': 'Abe'}],
-            #                 'issued': {'date-parts': [['2010', 12, 31]]}
-            #             },
-            #             'locator': '12',
-            #             'label': 'page',
-            #             'prefix': 'see'
-            #         },
-            #         {
-            #             'id': 41,
-            #             'uris': ['http://zotero.org/users/local/bv74ArEQ/items/D2ZHM7Z4'],
-            #             'itemData': {
-            #                 'id': 41,
-            #                 'type': 'book',
-            #                 'collection-title': 'UTF-16 Enjoyers',
-            #                 'event-place': '안돌이지돌이다래미한숨바우',
-            #                 'publisher-place': '안돌이지돌이다래미한숨바우',
-            #                 'title': 'Zażółć gęślą jaźń',
-            #                 'author': [{'family': 'Ce', 'given': 'Abe'}],
-            #                 'issued': {'date-parts': [['2023', 1, 1]]}
-            #             }
-            #         }
-            #     ],
-            #     'schema': 'https://github.com/citation-style-language/schema/raw/master/csl-citation.json'
-            # }
     return citations
 
 
@@ -113,18 +99,26 @@ def _warn(citation_item):
     )
 
 
-def generate_citation(
+def add_citations(
     html_soup: bs4.BeautifulSoup,
-    citations: list[citeproc.Citation],
+    citeproc_citations: list[citeproc.Citation],
+    citations: list[Citation],
     bib: citeproc.CitationStylesBibliography,
-) -> t.Generator[str, None, None]:
-    # ) -> list[str]:
+) -> bs4.BeautifulSoup:
     i = 0
     spans = html_soup.find_all("span", {"class": "citation"})
     for span in spans:
         data_src = span.attrs["data-src"]
+        # this should follow the same rule as in extract_citations()
         if data_src.startswith("data:application/json;base64,"):
             citation = citations[i]
-            yield bib.cite(citation, _warn)
-            # x.append(bib.cite(citation, _warn))
-            i += 1  # this should follow the same rule as in extract_citations()
+            citation_str = citation["properties"]["plainCitation"]
+            GENERATE_CITATION_USING_CITEPROC = (
+                "citation = citeproc_citations[i]",
+                "citation_str = bib.cite(citation, _warn)",
+            )
+            new_tag = html_soup.new_tag("cite")
+            new_tag.string = citation_str
+            span.replace_with(new_tag)
+            i += 1
+    return html_soup
