@@ -50,7 +50,9 @@ class TestCitationsFromFields:
         )
 
     def test_render_proper_html(self):
-        expected_html = "<p>A claim <cite>(see Ce 2010, Abb. 13 for examples)</cite>(see Ce 2010, Abb. 13 for examples).</p>"
+        expected_html = (
+            "<p>A claim <cite>(see Ce 2010, Abb. 13 for examples)</cite>.</p>"
+        )
         assert str(self.html_soup) == expected_html
 
 
@@ -125,7 +127,7 @@ class TestCitationsFromFootnotes:
             '<a href="#footnote-2" id="footnote-ref-2">[2]</a>'
             "</sup>.</p>"
             '<ol><li id="footnote-1"><p> '
-            "<cite>Joe Schmoe, „Just no“, Opinions, 1, Nr. 1 (2035): 1–2.</cite>"
+            "<cite>Joe Schmoe, „Just no“, Opinions, 1, Nr. 1 (2035): 1–2.</cite> "
             '<a href="#footnote-ref-1">↑</a>'
         )
         assert str(self.html_soup).startswith(expected_html_start)

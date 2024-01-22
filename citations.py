@@ -51,10 +51,9 @@ def add_citations_and_bibliography(
 
 def extract_citations(html_soup: bs4.BeautifulSoup) -> list[Citation]:
     citations = []
-    spans = html_soup.find_all("span", {"class": "citation"})
-    for span in spans:
-        data_src = span.attrs["data-src"]
-        if data_src.startswith("data:application/json;base64,"):
+    for span in _find_all_citation_spans(html_soup):
+        if _has_inner_json_data(span):
+            data_src = span.attrs["data-src"]
             citations.append(
                 json.loads(
                     base64.b64decode(data_src[len("data:application/json;base64,") :]),
@@ -91,14 +90,6 @@ def create_citations_to_register(citations: list[Citation]) -> list[citeproc.Cit
     return citation_objects
 
 
-def _warn(citation_item):
-    print(
-        "WARNING: Reference with key '{}' not found in the bibliography.".format(
-            citation_item.key
-        )
-    )
-
-
 def add_citations(
     html_soup: bs4.BeautifulSoup,
     citeproc_citations: list[citeproc.Citation],
@@ -106,11 +97,16 @@ def add_citations(
     bib: citeproc.CitationStylesBibliography,
 ) -> bs4.BeautifulSoup:
     i = 0
-    spans = html_soup.find_all("span", {"class": "citation"})
-    for span in spans:
-        data_src = span.attrs["data-src"]
-        # this should follow the same rule as in extract_citations()
-        if data_src.startswith("data:application/json;base64,"):
+
+    def _warn(citation_item):
+        print(
+            "WARNING: Reference with key '{}' not found in the bibliography.".format(
+                citation_item.key
+            )
+        )
+
+    for span in _find_all_citation_spans(html_soup):
+        if _has_inner_json_data(span):
             citation = citations[i]
             citation_str = citation["properties"]["plainCitation"]
             GENERATE_CITATION_USING_CITEPROC = (
