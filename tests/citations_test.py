@@ -130,4 +130,14 @@ class TestCitationsFromFootnotes:
             "<cite>Joe Schmoe, „Just no“, Opinions, 1, Nr. 1 (2035): 1–2.</cite> "
             '<a href="#footnote-ref-1">↑</a>'
         )
+        # expected_html_start = (
+        #     "<p>Claim A"
+        #     '<a href="#footnote-1" id="footnote-ref-1">[1]</a>'
+        #     ". Claim B"
+        #     '<a href="#footnote-2" id="footnote-ref-2">[2]</a>'
+        #     ".</p>"
+        #     '<ol><li id="footnote-1"><p> '
+        #     "<cite>Joe Schmoe, „Just no“, Opinions, 1, Nr. 1 (2035): 1–2.</cite> "
+        #     '<a href="#footnote-ref-1">↑</a>'
+        # )
         assert str(self.html_soup).startswith(expected_html_start)

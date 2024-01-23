@@ -46,6 +46,7 @@ def add_citations_and_bibliography(
     for citation in citeproc_citations:
         bibliography.register(citation)
     html_soup = add_citations(html_soup, citeproc_citations, citations, bibliography)
+    html_soup = add_bibliography(html_soup, bibliography)
     return html_soup
 
 
@@ -117,4 +118,22 @@ def add_citations(
             new_tag.string = citation_str
             span.replace_with(new_tag)
             i += 1
+    return html_soup
+
+
+def add_bibliography(
+    html_soup: bs4.BeautifulSoup,
+    bib: citeproc.CitationStylesBibliography,
+) -> bs4.BeautifulSoup:
+    div = html_soup.new_tag("div", {"class": "dgtmon-bibliography"})
+    h1 = html_soup.new_tag("h1")
+    h1.string = "Bibliography"  # maybe give ability to change that in config.yaml
+    ol = html_soup.new_tag("ol")
+    for citation in bib.bibliography():
+        li = html_soup.new_tag("li")
+        li.string = f"<small>{str(citation)}</small>"
+        ol.append(li)
+    div.append(h1)
+    div.append(ol)
+    html_soup.append(div)
     return html_soup

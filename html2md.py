@@ -30,13 +30,43 @@ class MystMdConverter(markdownify.MarkdownConverter):
         sub_symbol = "{sub}"
         sup_symbol = "{sup}"
 
+    def convert_a(self, el, text, convert_as_inline):
+        prefix, suffix, text = markdownify.chomp(text)
+        identif = el.get("id", "")
+        href = el.get("href", "")
+        if href.startswith("#footnote-") and identif.startswith("footnote-ref-"):
+            return "[^%s]" % identif
+        return super().convert_a(el, text, convert_as_inline)
+
+    def convert_li(self, el, text, convert_as_inline):
+        identif = el.get("id", "")
+        if identif.startswith("footnote-"):
+            inner = next(el.children)
+            a = inner.findChild("a")
+            text = inner.text.strip()
+            if text.endswith(" ↑"):
+                text = text[:-2]
+            href = a.get("href", "")
+            if href.startswith("#"):
+                href = href[1:]
+            return "[^%s]: %s\n" % (href, text)
+        return super().convert_li(el, text, convert_as_inline)
+
     def convert_blockquote(self, el, text, convert_as_inline):
         if convert_as_inline:
             return text
         return "" + (line_beginning_re.sub("> ", text) + "\n") if text else ""
 
     convert_sub = sub_inline_conversion(lambda self: self.options["sub_symbol"])
-    convert_sup = sub_inline_conversion(lambda self: self.options["sup_symbol"])
+
+    def convert_sup(self, el, text, convert_as_inline):
+        markup_tag = self.options["sup_symbol"]
+        prefix, suffix, text = markdownify.chomp(text)
+        if not text:
+            return ""
+        if text.startswith("[^footnote-ref-"):
+            return text
+        return "%s%s`%s`%s" % (prefix, markup_tag, text, suffix)
 
 
 def convert_to_md(soup, **options):

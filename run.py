@@ -25,7 +25,7 @@ from citations import add_citations_and_bibliography
 # """
 
 
-def _run_on(fp: pathlib.Path) -> None:
+def _prepare_md(fp: pathlib.Path) -> None:
     # transform .docx to .html
     style_mappings = """
     p[style-name='Quote'] => blockquote:fresh
@@ -50,6 +50,8 @@ def _run_on(fp: pathlib.Path) -> None:
         # markdown = ENABLE_EXECUTABLE_CODE_IN_JB + convert_to_md(result.value)
         f.write(convert_to_md(html_soup))
 
+
+def _render_digital_version(fp: pathlib.Path) -> None:
     # prepare a jupyter-notebook and mystmd rendering of the .md file
     shutil.copyfile(fp.with_suffix(".md"), f"jb/{fp.with_suffix('.md').name}")
     shutil.copyfile(fp.with_suffix(".md"), f"mystmd/{fp.with_suffix('.md').name}")
@@ -62,11 +64,12 @@ def _run_on(fp: pathlib.Path) -> None:
 
 if __name__ == "__main__":
     for fp in [
-        # pathlib.Path("./citation_in_fields.docx"),
-        # pathlib.Path("./citation_in_footnotes.docx"),
+        pathlib.Path("./citation_in_fields.docx"),
+        pathlib.Path("./citation_in_footnotes.docx"),
         pathlib.Path("./04_docx_guidelines.docx"),
     ]:
         assert fp.exists()
         assert fp.is_dir() == False
         print(fp)
-        _run_on(fp)
+        _prepare_md(fp)
+        _render_digital_version(fp)
