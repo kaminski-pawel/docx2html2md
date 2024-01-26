@@ -30,17 +30,32 @@ class MystMdConverter(markdownify.MarkdownConverter):
         sub_symbol = "{sub}"
         sup_symbol = "{sup}"
 
+    # TODO: use regex to find _Ref patterns and better handle making data safe
+
     def convert_a(self, el, text, convert_as_inline):
         prefix, suffix, text = markdownify.chomp(text)
         identif = el.get("id", "")
         href = el.get("href", "")
         if href.startswith("#footnote-") and identif.startswith("footnote-ref-"):
             return "[^%s]" % identif
+        if href.startswith("#endnote-") and identif.startswith("endnote-ref-"):
+            return "[^%s]" % identif
+        if identif.startswith("_Ref"):
+            return '<html><a id="%s">%s</a></html>' % (identif, text)
+        if href.startswith("#_Ref"):
+            return '<html><a href="%s">%s</a></html>' % (href, text)
         return super().convert_a(el, text, convert_as_inline)
+
+    def convert_hn(self, n, el, text, convert_as_inline):
+        if '<a href="' in text or '<a id="' in text:
+            text = text.replace('<a href="', '<html><a href="')
+            text = text.replace('<a id="', '<html><a id="')
+            text = text.replace("</html>", "</a></html>")
+        return super().convert_hn(n, el, text, convert_as_inline)
 
     def convert_li(self, el, text, convert_as_inline):
         identif = el.get("id", "")
-        if identif.startswith("footnote-"):
+        if identif.startswith("footnote-") or identif.startswith("endnote-"):
             inner = next(el.children)
             a = inner.findChild("a")
             text = inner.text.strip()
@@ -65,6 +80,8 @@ class MystMdConverter(markdownify.MarkdownConverter):
         if not text:
             return ""
         if text.startswith("[^footnote-ref-"):
+            return text
+        if text.startswith("[^endnote-ref-"):
             return text
         return "%s%s`%s`%s" % (prefix, markup_tag, text, suffix)
 
