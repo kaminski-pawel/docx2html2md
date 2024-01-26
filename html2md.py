@@ -46,6 +46,14 @@ class MystMdConverter(markdownify.MarkdownConverter):
             return '<html><a href="%s">%s</a></html>' % (href, text)
         return super().convert_a(el, text, convert_as_inline)
 
+    def convert_p(self, el, text, convert_as_inline):
+        if text.startswith(
+            ":::{iframe} <https://www.youtube.com/embed/"
+        ) or text.startswith(":::{iframe} <https://player.vimeo.com/video/"):
+            text = text.replace("<", "", 1)
+            text = text.replace(">", "", 1)
+        return super().convert_p(el, text, convert_as_inline)
+
     def convert_hn(self, n, el, text, convert_as_inline):
         if '<a href="' in text or '<a id="' in text:
             text = text.replace('<a href="', '<html><a href="')
