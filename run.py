@@ -1,5 +1,6 @@
 import shutil
 import subprocess
+import time
 import bs4
 
 # from bs4 import BeautifulSoup
@@ -55,7 +56,10 @@ def _render_digital_version(fp: pathlib.Path) -> None:
     # prepare a jupyter-notebook and mystmd rendering of the .md file
     shutil.copyfile(fp.with_suffix(".md"), f"jb/{fp.with_suffix('.md').name}")
     shutil.copyfile(fp.with_suffix(".md"), f"mystmd/{fp.with_suffix('.md').name}")
-    subprocess.run("jupyter-book build jb/".split(" "))  # around 1.5 sec perf_time() 😬
+    subprocess.run(
+        "jupyter-book build jb/".split(" ")
+    )  # when tested around 1.5 sec perf_time() 😬
+    subprocess.Popen("myst build --html".split(" "), cwd="mystmd/")
     WORKS_GREAT_BUT_IS_SLOWER_THAN_JB = (
         'subprocess.Popen("myst build --html".split(" "), cwd="mystmd/")'
         # hard to measure: builds fast, but then has to spin up a server
@@ -63,13 +67,19 @@ def _render_digital_version(fp: pathlib.Path) -> None:
 
 
 if __name__ == "__main__":
-    for fp in [
-        pathlib.Path("./citation_in_fields.docx"),
-        pathlib.Path("./citation_in_footnotes.docx"),
-        pathlib.Path("./04_docx_guidelines.docx"),
-    ]:
-        assert fp.exists()
-        assert fp.is_dir() == False
-        print(fp)
-        _prepare_md(fp)
-        _render_digital_version(fp)
+    while True:
+        for fp in [
+            # pathlib.Path("./citation_in_fields.docx"),
+            # pathlib.Path("./citation_in_footnotes.docx"),
+            # pathlib.Path("./cross-references.docx"),
+            pathlib.Path("./docx_guidelines.docx"),
+            # pathlib.Path("./quick-loop.docx")
+        ]:
+            assert fp.exists()
+            assert fp.is_dir() == False
+            print(fp)
+            _prepare_md(fp)
+            _render_digital_version(fp)
+        print("\n> sleep")
+        time.sleep(10)
+        break

@@ -125,6 +125,8 @@ def add_bibliography(
     html_soup: bs4.BeautifulSoup,
     bib: citeproc.CitationStylesBibliography,
 ) -> bs4.BeautifulSoup:
+    if not bib.bibliography():
+        return html_soup
     div = html_soup.new_tag("div", {"class": "dgtmon-bibliography"})
     h1 = html_soup.new_tag("h1")
     h1.string = "Bibliography"  # maybe give ability to change that in config.yaml

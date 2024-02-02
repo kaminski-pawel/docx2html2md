@@ -1,9 +1,8 @@
 title: My sample book
-author: Pawel Kaminski 
+author: Pawel Kaminski
 # logo: logo.png
 # execute:
 #  execute_notebooks: force
 
 bibtex_bibfiles:
-- bibliography.bib
-
+  - bibliography.bib
