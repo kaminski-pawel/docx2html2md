@@ -1,6 +1,8 @@
 import markdownify
 import re
 
+from md_extraction import BookMetadata, AssetDatapoint, AssetMetadata
+
 line_beginning_re = re.compile(r"^", re.MULTILINE)
 
 
@@ -24,6 +26,11 @@ def sub_inline_conversion(markup_fn):
 
 
 class MystMdConverter(markdownify.MarkdownConverter):
+
+    def __init__(self, metadata: BookMetadata, **options):
+        self._metadata = metadata
+        super().__init__(**options)
+
     class Options(markdownify.MarkdownConverter.DefaultOptions):
         heading_style = markdownify.ATX
         escape_underscores = False
@@ -93,7 +100,24 @@ class MystMdConverter(markdownify.MarkdownConverter):
             return text
         return "%s%s`%s`%s" % (prefix, markup_tag, text, suffix)
 
+    def convert_table(self, el, text, convert_as_inline):
+        if "##" in text:
+            asset_meta = AssetMetadata()
+            key, val = "", ""
+            for tr in el.find_all(["tr"]):
+                for descendent in tr.find_all():
+                    if descendent.text.startswith("##"):
+                        key = descendent.text
+                    else:
+                        val = descendent.text
+                if key:
+                    asset_meta.add(key, val)
+            if asset_meta:
+                self._metadata.add_asset_metadata(asset_meta)
+            return "\n"
+        return super().convert_table(el, text, convert_as_inline)
 
-def convert_to_md(soup, **options):
+
+def convert_to_md(soup, metadata: BookMetadata, **options):
     # to consider: change custom options to be passed to convert_to_md(**options <==)
-    return MystMdConverter(**options).convert_soup(soup)
+    return MystMdConverter(metadata, **options).convert_soup(soup)
