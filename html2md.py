@@ -106,7 +106,7 @@ class MystMdConverter(markdownify.MarkdownConverter):
             key, val = "", ""
             for tr in el.find_all(["tr"]):
                 for descendent in tr.find_all():
-                    if descendent.text.startswith("##"):
+                    if re.match(r"^\s*##\s*\w+", descendent.text):
                         key = descendent.text
                     else:
                         val = descendent.text

@@ -19,17 +19,20 @@ class TestHtml2MdMetadataExtraction:
         cls.metadata = BookMetadata()
         cls.md = convert_to_md(cls.html_soup, cls.metadata)
         cls.assets_meta = cls.metadata.assets_as_dicts()
+        cls.assmeta0 = cls.metadata.assets[0]
+        cls.assmeta1 = cls.metadata.assets[1]
         cls.expected_meta = [
             {
-                "##Location": pathlib.Path("./images/tiny-picture.png"),
-                "##License-name": "Unsplash License",
-                "##License-url": "https://unsplash.com/license",
-                "##Author": "Jean Carlo Emer",
-                "##Source": "https://unsplash.com/photos/beige-concrete-house-2d-RL-xa4mk",
+                "src": pathlib.Path("./images/tiny-picture.png"),
+                "licensename": "Unsplash License",
+                "licenseurl": "https://unsplash.com/license",
+                "author": "Jean Carlo Emer",
+                "takenfrom": "https://unsplash.com/photos/beige-concrete-house-2d-RL-xa4mk",
             },
             {
-                "##Location": pathlib.Path("./images/10x10px-img.png"),
-                "##Author": "Koziołek Matołek",
+                "papersrc": pathlib.Path("./images/10x10px-img.png"),
+                "digitalsrc": pathlib.Path("./images/10x10px-img.png"),
+                "author": "Koziołek Matołek",
             },
         ]
 
@@ -37,30 +40,29 @@ class TestHtml2MdMetadataExtraction:
         assert len(self.metadata.assets) == 2
 
     def test_all_metadata_rows_were_extracted(self):
-        assert len(self.metadata.assets[0]) == 5
-        assert len(self.metadata.assets[1]) == 2
+        assert len(self.metadata.assets[0]) == len(self.expected_meta[0])
+        assert len(self.metadata.assets[1]) == len(self.expected_meta[1])
 
     def test_string_values(self):
-        assert (
-            self.assets_meta[0]["##License-name"]
-            == self.expected_meta[0]["##License-name"]
-        )
-        assert (
-            self.assets_meta[0]["##License-url"]
-            == self.expected_meta[0]["##License-url"]
-        )
-        assert self.assets_meta[0]["##Author"] == self.expected_meta[0]["##Author"]
-        assert self.assets_meta[0]["##Source"] == self.expected_meta[0]["##Source"]
-        assert self.assets_meta[1]["##Author"] == self.expected_meta[1]["##Author"]
+        assert self.assmeta0["src"] == self.expected_meta[0]["src"]
+        assert self.assmeta0["licensename"] == self.expected_meta[0]["licensename"]
+        assert self.assmeta0["licenseurl"] == self.expected_meta[0]["licenseurl"]
+        assert self.assmeta0["author"] == self.expected_meta[0]["author"]
+        assert self.assmeta1["author"] == self.expected_meta[1]["author"]
 
     def test_filepath_values(self):
-        assert self.assets_meta[0]["##Location"] == self.expected_meta[0]["##Location"]
-        assert self.assets_meta[1]["##Location"] == self.expected_meta[1]["##Location"]
+        assert self.assmeta0["src"] == self.expected_meta[0]["src"]
+        assert self.assmeta1["papersrc"] == self.expected_meta[1]["papersrc"]
+        assert self.assmeta1["digitalsrc"] == self.expected_meta[1]["digitalsrc"]
+
+    def test_filepath_attribs(self):
+        assert self.assmeta1.paper_fp == pathlib.Path("./images/10x10px-img.png")
+        assert self.assmeta1.digital_fp == pathlib.Path("./images/10x10px-img.png")
 
     def test_metadata_tables_removed_from_markdown(self):
-        assert self.assets_meta[0]["##Author"] not in self.md
-        assert self.assets_meta[1]["##Author"] not in self.md
-        assert self.assets_meta[0]["##License-name"] not in self.md
+        assert self.assmeta0["licensename"] not in self.md
+        assert self.assmeta0["author"] not in self.md
+        assert self.assmeta1["author"] not in self.md
 
     def test_standard_tables_included_in_markdown(self):
         assert (

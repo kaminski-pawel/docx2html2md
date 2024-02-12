@@ -4,8 +4,30 @@ import pathlib
 import typing as t
 
 
-METADATA_MAPPING_FILE_LOCATION = {"#Location": "#Location"}
-METADATA_MAPPING = {**METADATA_MAPPING_FILE_LOCATION}
+METADATA_MAPPING_PAPER_SRC = ["papersrc", "papersource"]
+METADATA_MAPPING_DIGITAL_SRC = ["digitalsrc", "digitalsource"]
+METADATA_MAPPING_GENERAL_SRC = ["src", "source"]
+METADATA_MAPPING_DEL_PREV = [
+    "deleteprev",
+    "deleteprevious",
+    "removeprev",
+    "removeprevious",
+]
+METADATA_MAPPING_TAKEN_FROM = ["from", "takenfrom"]
+METADATA_MAPPINGS = [
+    METADATA_MAPPING_PAPER_SRC,
+    METADATA_MAPPING_DIGITAL_SRC,
+    METADATA_MAPPING_GENERAL_SRC,
+    METADATA_MAPPING_DEL_PREV,
+    METADATA_MAPPING_TAKEN_FROM,
+]
+METADATA_MAPPING = {}
+# To normalize table keys create a mapping {"oldkey": "normalizedkey"}
+for mapping in METADATA_MAPPINGS:
+    METADATA_MAPPING.update({old: mapping[0] for old in mapping[1:]})
+
+
+print("METADATA_MAPPING", METADATA_MAPPING)
 
 
 @dataclasses.dataclass
@@ -16,7 +38,7 @@ class AssetDatapoint:
     val: t.Union[str, pathlib.Path] = dataclasses.field(init=False)
 
     def __post_init__(self):
-        self.key = self._key.strip()
+        self.key = self._normalize_key()
         if self._looks_like_a_potential_filepath():
             fp = pathlib.Path(self._val)
             self.val = fp
@@ -30,6 +52,19 @@ class AssetDatapoint:
         if self._val.startswith("./"):
             return True
         return False
+
+    def _normalize_key(self) -> str:
+        s = (
+            self._key.lower()
+            .strip()
+            .replace("_", "")
+            .replace("-", "")
+            .replace("#", "")
+            .replace(" ", "")
+        )
+        if s in METADATA_MAPPING:
+            return METADATA_MAPPING[s]
+        return s
 
     def to_dict(self):
         return {self.key: self.val}
@@ -46,19 +81,31 @@ class AssetMetadata:
 
     def __init__(self) -> None:
         self.datapoints = []
-        self.file = None
+        self.paper_fp = None
+        self.digital_fp = None
+
+    def __getitem__(self, key: str) -> t.Union[str, pathlib.Path]:
+        return self.__dict__[key]
 
     def to_dict(self) -> list[AssetDatapoint]:
         return {dp.key: dp.val for dp in self.datapoints}
 
     def add(self, key: str, val: str) -> None:
         datapoint = AssetDatapoint(_key=key, _val=val)
-        if (
-            isinstance(datapoint.val, pathlib.Path)
-            and key in METADATA_MAPPING_FILE_LOCATION
-        ):
-            self.file = datapoint.val
+        if isinstance(datapoint.val, pathlib.Path):
+            if datapoint.key in METADATA_MAPPING_PAPER_SRC:
+                self.paper_fp = datapoint.val
+                if self.digital_fp is None:
+                    self.digital_fp = datapoint.val
+            elif datapoint.key in METADATA_MAPPING_DIGITAL_SRC:
+                self.digital_fp = datapoint.val
+                if self.paper_fp is None:
+                    self.paper_fp = datapoint.val
+            elif datapoint.key in METADATA_MAPPING_GENERAL_SRC:
+                self.paper_fp = datapoint.val
+                self.digital_fp = datapoint.val
         self.datapoints.append(datapoint)
+        self.__dict__[datapoint.key] = datapoint.val
 
     def remove(self, key: str) -> None:
         for dp, i in enumerate(self.datapoints):
