@@ -14,20 +14,19 @@ METADATA_MAPPING_DEL_PREV = [
     "removeprevious",
 ]
 METADATA_MAPPING_TAKEN_FROM = ["from", "takenfrom"]
-METADATA_MAPPINGS = [
+# To normalize table keys create a mapping {"oldkey": "normalizedkey"}
+METADATA_MAPPING = {}
+for mapping in [
     METADATA_MAPPING_PAPER_SRC,
     METADATA_MAPPING_DIGITAL_SRC,
     METADATA_MAPPING_GENERAL_SRC,
     METADATA_MAPPING_DEL_PREV,
     METADATA_MAPPING_TAKEN_FROM,
-]
-METADATA_MAPPING = {}
-# To normalize table keys create a mapping {"oldkey": "normalizedkey"}
-for mapping in METADATA_MAPPINGS:
+]:
     METADATA_MAPPING.update({old: mapping[0] for old in mapping[1:]})
 
 
-print("METADATA_MAPPING", METADATA_MAPPING)
+# type AcceptedValues = t.Union[str, pathlib.Path]
 
 
 @dataclasses.dataclass
@@ -87,7 +86,7 @@ class AssetMetadata:
     def __getitem__(self, key: str) -> t.Union[str, pathlib.Path]:
         return self.__dict__[key]
 
-    def to_dict(self) -> list[AssetDatapoint]:
+    def to_dict(self) -> dict[str, t.Union[str, pathlib.Path]]:
         return {dp.key: dp.val for dp in self.datapoints}
 
     def add(self, key: str, val: str) -> None:
@@ -136,7 +135,7 @@ class BookMetadata:
     def add_asset_metadata(self, asset_meta: AssetMetadata) -> None:
         self.assets.append(asset_meta)
 
-    def assets_as_dicts(self) -> dict[str, t.Union[str, pathlib.Path]]:
+    def assets_as_dicts(self) -> list[dict[str, t.Union[str, pathlib.Path]]]:
         return [am.to_dict() for am in self.assets]
 
     def __str__(self):
