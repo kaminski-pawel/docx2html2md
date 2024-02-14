@@ -21,6 +21,7 @@ class TestHtml2MdMetadataExtraction:
         cls.assets_meta = cls.metadata.assets_as_dicts()
         cls.assmeta0 = cls.metadata.assets[0]
         cls.assmeta1 = cls.metadata.assets[1]
+        cls.assmeta2 = cls.metadata.assets[2]
         cls.expected_meta = [
             {
                 "src": pathlib.Path("./images/tiny-picture.png"),
@@ -32,12 +33,17 @@ class TestHtml2MdMetadataExtraction:
             {
                 "papersrc": pathlib.Path("./images/10x10px-img.png"),
                 "digitalsrc": pathlib.Path("./images/10x10px-img.png"),
+                "deleteprev": False,
                 "author": "Koziołek Matołek",
+            },
+            {
+                "papersrc": pathlib.Path("./images/10x10px-img.png"),
+                "deleteprev": True,
             },
         ]
 
     def test_all_metadata_tables_were_extracted(self):
-        assert len(self.metadata.assets) == 2
+        assert len(self.metadata.assets) == 3
 
     def test_all_metadata_rows_were_extracted(self):
         assert len(self.metadata.assets[0]) == len(self.expected_meta[0])
@@ -56,8 +62,20 @@ class TestHtml2MdMetadataExtraction:
         assert self.assmeta1["digitalsrc"] == self.expected_meta[1]["digitalsrc"]
 
     def test_filepath_attribs(self):
+        assert self.assmeta0.paper_fp == pathlib.Path("./images/tiny-picture.png")
+        assert self.assmeta0.digital_fp == pathlib.Path("./images/tiny-picture.png")
         assert self.assmeta1.paper_fp == pathlib.Path("./images/10x10px-img.png")
         assert self.assmeta1.digital_fp == pathlib.Path("./images/10x10px-img.png")
+
+    def test_delete_prev_values(self):
+        assert "deleteprev" not in self.assmeta0.__dict__
+        assert self.assmeta1["deleteprev"] == self.expected_meta[1]["deleteprev"]
+        assert self.assmeta2["deleteprev"] == self.expected_meta[2]["deleteprev"]
+
+    def test_delete_prev_attrib(self):
+        assert self.assmeta0.delete_prev == False
+        assert self.assmeta1.delete_prev == False
+        assert self.assmeta2.delete_prev
 
     def test_metadata_tables_removed_from_markdown(self):
         assert self.assmeta0["licensename"] not in self.md
