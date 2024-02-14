@@ -99,7 +99,7 @@ class AssetMetadata:
     """
 
     def __init__(self) -> None:
-        self.datapoints = []
+        self._datapoints = []
         self.paper_fp = None
         self.digital_fp = None
         self.delete_prev = False
@@ -108,10 +108,10 @@ class AssetMetadata:
         return self.__dict__[key]
 
     def __nonzero__(self):
-        return bool(self.datapoints)
+        return bool(self._datapoints)
 
     def to_dict(self) -> dict[str, t.Union[str, bool, pathlib.Path]]:
-        return {dp.key: dp.val for dp in self.datapoints}
+        return {dp.key: dp.val for dp in self._datapoints}
 
     def add(self, key: str, val: str) -> None:
         datapoint = AssetDatapoint(_key=key, _val=val)
@@ -122,25 +122,25 @@ class AssetMetadata:
                 self.paper_fp = datapoint.val
             elif datapoint.key in METADATA_MAPPING_DIGITAL_SRC:
                 self.digital_fp = datapoint.val
-        self.datapoints.append(datapoint)
+        self._datapoints.append(datapoint)
         self.__dict__[datapoint.key] = datapoint.val
 
     def remove(self, key: str) -> None:
-        for dp, i in enumerate(self.datapoints):
+        for dp, i in enumerate(self._datapoints):
             if dp.key == key:
-                del self.datapoints[i]
+                del self._datapoints[i]
 
     def includes(self, key: str) -> bool:
-        for dp in self.datapoints:
+        for dp in self._datapoints:
             if dp.key == key:
                 return True
         return False
 
     def __str__(self):
-        return json.dumps([dp.to_json() for dp in self.datapoints])
+        return json.dumps([dp.to_json() for dp in self._datapoints])
 
     def __len__(self):
-        return len(self.datapoints)
+        return len(self._datapoints)
 
 
 class BookMetadata:
