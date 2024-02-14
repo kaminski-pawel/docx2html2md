@@ -8,7 +8,7 @@ import typing as t
 # the others are valid but will be mapped to the first item
 METADATA_MAPPING_PAPER_SRC = ["papersrc", "papersource"]
 METADATA_MAPPING_DIGITAL_SRC = ["digitalsrc", "digitalsource"]
-METADATA_MAPPING_GENERAL_SRC = ["src", "source"]
+# METADATA_MAPPING_GENERAL_SRC = ["src", "source"]
 METADATA_MAPPING_DEL_PREV = [
     "deleteprev",
     "deleteprevious",
@@ -23,7 +23,7 @@ METADATA_MAPPING = {}
 for mapping in [
     METADATA_MAPPING_PAPER_SRC,
     METADATA_MAPPING_DIGITAL_SRC,
-    METADATA_MAPPING_GENERAL_SRC,
+    # METADATA_MAPPING_GENERAL_SRC,
     METADATA_MAPPING_DEL_PREV,
     METADATA_MAPPING_TAKEN_FROM,
 ]:
@@ -59,20 +59,17 @@ class AssetDatapoint:
         return False
 
     def _normalize_key(self) -> str:
-        s = (
-            self._key.lower()
-            .strip()
-            .replace("_", "")
-            .replace("-", "")
-            .replace("#", "")
-            .replace(" ", "")
-        )
+        s = self._key
+        while " " in s:
+            s = s.replace(" ", "")
+        s = s.lower().strip().replace("_", "").replace("-", "").replace("#", "")
         if s in METADATA_MAPPING:
             return METADATA_MAPPING[s]
         return s
 
     def _val_to_bool(self) -> bool:
-        if self._val.strip().lower() in [
+        v = self._val.strip().lower()
+        if v in [
             "0",
             "no",
             "nee",
@@ -86,7 +83,7 @@ class AssetDatapoint:
             "kein",
         ]:
             return False
-        return bool(self._val)
+        return bool(v)
 
     def to_dict(self):
         return {self.key: self.val}
@@ -123,14 +120,7 @@ class AssetMetadata:
         elif isinstance(datapoint.val, pathlib.Path):
             if datapoint.key in METADATA_MAPPING_PAPER_SRC:
                 self.paper_fp = datapoint.val
-                if self.digital_fp is None:
-                    self.digital_fp = datapoint.val
             elif datapoint.key in METADATA_MAPPING_DIGITAL_SRC:
-                self.digital_fp = datapoint.val
-                if self.paper_fp is None:
-                    self.paper_fp = datapoint.val
-            elif datapoint.key in METADATA_MAPPING_GENERAL_SRC:
-                self.paper_fp = datapoint.val
                 self.digital_fp = datapoint.val
         self.datapoints.append(datapoint)
         self.__dict__[datapoint.key] = datapoint.val

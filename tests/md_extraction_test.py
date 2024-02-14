@@ -24,7 +24,7 @@ class TestHtml2MdMetadataExtraction:
         cls.assmeta2 = cls.metadata.assets[2]
         cls.expected_meta = [
             {
-                "src": pathlib.Path("./images/tiny-picture.png"),
+                "papersrc": pathlib.Path("./images/tiny-picture.png"),
                 "licensename": "Unsplash License",
                 "licenseurl": "https://unsplash.com/license",
                 "author": "Jean Carlo Emer",
@@ -50,22 +50,24 @@ class TestHtml2MdMetadataExtraction:
         assert len(self.metadata.assets[1]) == len(self.expected_meta[1])
 
     def test_string_values(self):
-        assert self.assmeta0["src"] == self.expected_meta[0]["src"]
+        assert self.assmeta0["papersrc"] == self.expected_meta[0]["papersrc"]
         assert self.assmeta0["licensename"] == self.expected_meta[0]["licensename"]
         assert self.assmeta0["licenseurl"] == self.expected_meta[0]["licenseurl"]
         assert self.assmeta0["author"] == self.expected_meta[0]["author"]
         assert self.assmeta1["author"] == self.expected_meta[1]["author"]
 
     def test_filepath_values(self):
-        assert self.assmeta0["src"] == self.expected_meta[0]["src"]
+        assert self.assmeta0["papersrc"] == self.expected_meta[0]["papersrc"]
         assert self.assmeta1["papersrc"] == self.expected_meta[1]["papersrc"]
         assert self.assmeta1["digitalsrc"] == self.expected_meta[1]["digitalsrc"]
 
     def test_filepath_attribs(self):
         assert self.assmeta0.paper_fp == pathlib.Path("./images/tiny-picture.png")
-        assert self.assmeta0.digital_fp == pathlib.Path("./images/tiny-picture.png")
+        assert self.assmeta0.digital_fp == None
         assert self.assmeta1.paper_fp == pathlib.Path("./images/10x10px-img.png")
         assert self.assmeta1.digital_fp == pathlib.Path("./images/10x10px-img.png")
+        assert self.assmeta2.paper_fp == pathlib.Path("./images/tiny-picture.png")
+        assert self.assmeta2.digital_fp == pathlib.Path("./images/10x10px-img.png")
 
     def test_delete_prev_values(self):
         assert "deleteprev" not in self.assmeta0.__dict__
