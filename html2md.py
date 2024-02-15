@@ -54,7 +54,19 @@ class MystMdConverter(markdownify.MarkdownConverter):
         return super().convert_a(el, text, convert_as_inline)
 
     def convert_p(self, el, text, convert_as_inline):
-        if text.startswith(
+        re_match = re.match(r"\s*%\s*:::{dgt-mon-asset}\s*", text)
+        if re_match is not None:
+            uuidv4_len = 36
+            uuid = text[re_match.span()[1] :][:uuidv4_len]
+            asset_meta = self._metadata[uuid]
+            if asset_meta.digital_fp.suffix == ".html":
+                text = (
+                    "<html>"
+                    f'<iframe src="{str(asset_meta.digital_fp)}">'
+                    "</iframe>"
+                    "</html>"
+                )
+        elif text.startswith(
             ":::{iframe} <https://www.youtube.com/embed/"
         ) or text.startswith(":::{iframe} <https://player.vimeo.com/video/"):
             text = text.replace("<", "", 1)
@@ -100,24 +112,65 @@ class MystMdConverter(markdownify.MarkdownConverter):
             return text
         return "%s%s`%s`%s" % (prefix, markup_tag, text, suffix)
 
-    def convert_table(self, el, text, convert_as_inline):
-        if "##" in text:
-            asset_meta = AssetMetadata()
-            key, val = "", ""
-            for tr in el.find_all(["tr"]):
-                for descendent in tr.find_all():
-                    if re.match(r"^\s*##\s*\w+", descendent.text):
-                        key = descendent.text
-                    else:
-                        val = descendent.text
-                if key:
-                    asset_meta.add(key, val)
-            if asset_meta:
-                self._metadata.add_asset_metadata(asset_meta)
-            return "\n"
-        return super().convert_table(el, text, convert_as_inline)
+    # def convert_table(self, el, text, convert_as_inline):
+    #     if "##" in text:
+    #         asset_meta = AssetMetadata()
+    #         key, val = "", ""
+    #         for tr in el.find_all(["tr"]):
+    #             for descendent in tr.find_all():
+    #                 if re.match(r"^\s*##\s*\w+", descendent.text):
+    #                     key = descendent.text
+    #                 else:
+    #                     val = descendent.text
+    #             if key:
+    #                 asset_meta.add(key, val)
+    #         if asset_meta:
+    #             self._metadata.add_asset_metadata(asset_meta)
+    #             return "\n% :::{dgt-mon-asset} " + asset_meta.uuid + "\n"
+    #         return "\n"
+    #     return super().convert_table(el, text, convert_as_inline)
 
 
-def convert_to_md(soup, metadata: BookMetadata, **options):
-    # to consider: change custom options to be passed to convert_to_md(**options <==)
+# class PostProcessor:
+#     def __init__(self, metadata: BookMetadata, **options):
+#         self._metadata = metadata
+#         self._options = options
+
+#     def enact_directives(self, md: str) -> str:
+#         """
+#         Iterate in reverse order on each markdown line and
+#         act on internal directives.
+#         """
+#         result = ""
+#         newline_count = 0
+#         # remove_next_obj = False
+#         current_block = ""
+#         uuidv4_len = 36
+#         lines = md.split("\n")
+#         # for line in md.split("\n")[::-1]:
+#         for i in range(len(lines) - 1, -1, -1):
+#             prevline = lines[i + 1] if i + 1 < len(lines) else ""
+#             line = lines[i]
+#             nextline = lines[i - 1] if i - 1 >= 0 else ""
+#             current_block = line + "\n" + current_block if current_block else line
+#             # if line.startswith("% :::{dgt-mon-asset} "):
+#             # remove_next_obj = True
+#             re_match = re.match(r"%\s*:::{dgt-mon-asset}\s*", line)
+#             if re_match is not None:
+#                 uuid = line[re_match.span()[1] :][:uuidv4_len]
+#                 asset_meta = self._metadata[uuid]
+#                 if asset_meta.delete_prev:
+#                     current_block = ""
+#                     current_block += line + "\nREMOVE PREVIOUS BLOCK!!!"
+#             elif line == "" and prevline != "":  # and remove_next_obj == False:
+#                 result = current_block + "\n" + result
+#                 current_block = ""
+#             elif line == "":
+#                 result = "\n" + result
+#         result = current_block + "\n" + result
+#         return result
+
+
+def convert_to_md(soup, metadata: BookMetadata, **options) -> str:
+    # TODO: change custom options to be passed to convert_to_md(**options <==)
     return MystMdConverter(metadata, **options).convert_soup(soup)

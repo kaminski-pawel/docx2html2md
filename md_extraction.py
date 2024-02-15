@@ -2,13 +2,13 @@ import dataclasses
 import json
 import pathlib
 import typing as t
+import uuid
 
 
 # Only the first item is the final key,
 # the others are valid but will be mapped to the first item
-METADATA_MAPPING_PAPER_SRC = ["papersrc", "papersource"]
+METADATA_MAPPING_PAPER_SRC = ["papersrc", "papersource", "src", "source"]
 METADATA_MAPPING_DIGITAL_SRC = ["digitalsrc", "digitalsource"]
-# METADATA_MAPPING_GENERAL_SRC = ["src", "source"]
 METADATA_MAPPING_DEL_PREV = [
     "deleteprev",
     "deleteprevious",
@@ -99,6 +99,7 @@ class AssetMetadata:
     """
 
     def __init__(self) -> None:
+        self.uuid = str(uuid.uuid4())
         self._datapoints = []
         self.paper_fp = None
         self.digital_fp = None
@@ -146,14 +147,19 @@ class AssetMetadata:
 class BookMetadata:
     def __init__(self) -> None:
         self.assets = []
+        self._metadata = {}
+
+    def __getitem__(self, key: str) -> AssetMetadata:
+        return self._metadata[key]
 
     def add_asset_metadata(self, asset_meta: AssetMetadata) -> None:
+        self._metadata[asset_meta.uuid] = asset_meta
         self.assets.append(asset_meta)
 
     def assets_as_dicts(self) -> list[dict[str, t.Union[str, bool, pathlib.Path]]]:
         return [am.to_dict() for am in self.assets]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "%s(assets=[%s])" % (
             self.__class__.__name__,
             ", ".join(str(am) for am in self.assets),

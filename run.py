@@ -14,6 +14,7 @@ import pathlib
 from html2md import convert_to_md
 from citations import add_citations_and_bibliography
 from md_extraction import BookMetadata
+from metadata_extraction import replace_assets_with_directives
 
 DATA_DIR = "data/"
 
@@ -38,6 +39,12 @@ def _copy_to_data_dir(fp: pathlib.Path) -> pathlib.Path:
     return newfp
 
 
+# cls.metadata = BookMetadata()
+# cls.html_soup = add_citations_and_bibliography(cls.html_soup)
+# cls.html_soup = assets_metadata(cls.html_soup, cls.metadata)
+# cls.md = convert_to_md(cls.html_soup, cls.metadata)
+
+
 def _prepare_md(fp: pathlib.Path) -> None:
     # transform .docx to .html
     style_mappings = """
@@ -53,12 +60,13 @@ def _prepare_md(fp: pathlib.Path) -> None:
 
     # extract bibliography as json in citation style language
     html_soup = bs4.BeautifulSoup(result.value, "html.parser")
+    metadata = BookMetadata()
     html_soup = add_citations_and_bibliography(html_soup)
+    html_soup = replace_assets_with_directives(html_soup, metadata)
 
     with open(fp.with_suffix(".html"), "w") as f:
         f.write(str(html_soup))
 
-    metadata = BookMetadata()
     # transform .html to .md file
     with open(fp.with_suffix(".md"), "w") as f:
         # markdown = ENABLE_EXECUTABLE_CODE_IN_JB + convert_to_md(result.value)
@@ -85,17 +93,17 @@ LATENCY_TEST = "/mnt/c/Users/Pawel.kaminski/OneDrive - University of Luxembourg/
 if __name__ == "__main__":
     last_modified = {}
     while True:
-        # for fp in [
-        #     # pathlib.Path("./citation_in_fields.docx"),
-        #     # pathlib.Path("./citation_in_footnotes.docx"),
-        #     # pathlib.Path("./cross-references.docx"),
-        #     # pathlib.Path("./docx_guidelines.docx"),
-        #     # pathlib.Path("./quick-loop.docx"),
-        #     pathlib.Path("./local-latency-test.docx"),
-        #     pathlib.Path(LATENCY_TEST),
-        # ]:
-        # pass
-        for fp in pathlib.Path(BOOK_PATH).glob("*.docx"):
+        for fp in [
+            # pathlib.Path("./citation_in_fields.docx"),
+            # pathlib.Path("./citation_in_footnotes.docx"),
+            # pathlib.Path("./cross-references.docx"),
+            # pathlib.Path("./quick-loop.docx"),
+            # pathlib.Path("./local-latency-test.docx"),
+            # pathlib.Path(LATENCY_TEST),
+            pathlib.Path("./embedded_widgets.docx"),
+        ]:
+            # pass
+            # for fp in pathlib.Path(BOOK_PATH).glob("*.docx"):
             if not fp.exists() or fp.is_dir():
                 continue
             if fp.name.startswith("~$"):
